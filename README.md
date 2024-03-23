@@ -2,8 +2,17 @@
 
 React Vite @ Typescript 
 
-Currently, two official plugins are available:
+Client for booking a car rental
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+State management 
+  - Redux Toolkit
+CSS Framwork 
+  - material-ui
+  - tailwind.css
+promise-based HTTP client
+  - Axios
+
+  
+  
+
 
