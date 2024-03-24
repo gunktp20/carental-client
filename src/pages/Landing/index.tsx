@@ -1,10 +1,10 @@
-import Headroom from "react-headroom";
 import Wrapper from "../../assets/wrappers/pages/Landing";
 import { Navbar } from "../../components";
 import Wallpaper from "../../assets/images/4-Reasons-why-a-Car-Rental-is-better-for-a-Family-Road-Trip-1.jpeg";
 import { FaTags } from "react-icons/fa";
 import { HiLightBulb } from "react-icons/hi";
 import { RiArrowGoBackLine } from "react-icons/ri";
+import Headroom from "react-headroom";
 
 // const initialState = {
 //   label: "",
@@ -16,7 +16,7 @@ import { RiArrowGoBackLine } from "react-icons/ri";
 //   button_label: "",
 //   on_payload: "",
 //   off_payload: "",
-// };
+// };3
 
 function Landing() {
   // const [values, setValues] = useState<typeof initialState>(initialState);
@@ -26,7 +26,9 @@ function Landing() {
   // };
   return (
     <Wrapper>
-      <Navbar />
+      <Headroom>
+        <Navbar />
+      </Headroom>
 
       <div className="relative h-[550px] w-[100%] flex justify-center bg-blue-500">
         <div className="bg-[#0000007a] w-[100%] absolute h-[100%]"></div>
@@ -142,18 +144,7 @@ function Landing() {
         </div>
       </div>
 
-      <div className="w-[100%] flex justify-center bg-primary-900 py-5">
-        <div className="flex flex-col w-[60%] xl:w-[70%] lg:w-[80%] md:w-[90%] sm:w-[91%]">
-          <div className="flex"></div>
-          <div className="flex gap-5 text-white text-sm">
-            <div>
-              © Drivehub 2024 ข้อตกลงและเงื่อนไข นโยบายความเป็นส่วนตัว |
-            </div>
-            <div>ผู้ประกอบกาารเข้าสู่ระบบ |</div>
-            <div>ผู้ประกอบกาารเข้าสู่ระบบ (V3) |</div>
-          </div>
-        </div>
-      </div>
+      
       {/*  */}
     </Wrapper>
   );
