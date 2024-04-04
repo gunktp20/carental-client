@@ -1,6 +1,7 @@
 import Wrapper from "../../assets/wrappers/pages/Register";
 import { Navbar, Footer } from "../../components";
 import wallpaper from "../../assets/images/wallpaper-register.jpg";
+import { FcGoogle } from "react-icons/fc";
 
 function Register() {
   return (
@@ -8,7 +9,7 @@ function Register() {
       <Navbar />
       <div className="flex flex-col justify-center items-center">
         {/* Login Form Start*/}
-        <div className="bg-white w-[540px] rounded-xl p-5 absolute z-[2] top-[9rem]">
+        <div className="bg-white w-[540px] rounded-xl p-8 absolute z-[2] top-[9rem]">
           <div className="flex flex-col">
             <div className="font-[400] text-[27px] text-gray-800">
               ลงทะเบียนเป็นสมาชิก
@@ -23,7 +24,7 @@ function Register() {
         >
           Your Email
         </label> */}
-          <div className="relative mb-6 mt-6">
+          <div className="relative mb-7 mt-6">
             <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
               <svg
                 className="w-4 h-4 text-gray-500 dark:text-gray-400"
@@ -45,6 +46,25 @@ function Register() {
             <div className="absolute text-red-500 text-[11.4px] bottom-[-1.3rem]">
               * กรุณากรอก อีเมลล์ ของคุณ
             </div>
+          </div>
+          <button className="bg-primary-500 text-sm text-white w-[100%] h-[42px] rounded-lg mb-8">
+            ลงทะเบียน
+          </button>
+          <div className="flex relative justify-center items-center mb-7">
+            <div className="absolute bg-white z-[2] px-2 rounded-[100%] text-gray-600 text-sm">
+              หรือ
+            </div>
+            <div className="bg-gray-300 absolute w-[100%] h-[1px]"></div>
+          </div>
+          <button className="border-[1px] h-[42px] mb-5 w-[100%] border-gray-300 rounded-lg flex items-center justify-center">
+            <FcGoogle className="text-[23px]" />
+            <div className="text-[12.8px] ml-2 ">เข้าสู่ระบบด้วย Google</div>
+          </button>
+          <div className="text-[12px]">
+            การลงทะเบียนเป็นสมาชิก Carental ถือว่าท่านยอมรับใน{" "}
+            <a className="text-primary-500 underline mr-2">เงื่อนไข ข้อกำหนด</a>
+            เเละ{" "}
+            <a className="text-primary-500 underline">นโยบายความเป็นส่วนตัว</a>
           </div>
         </div>
 

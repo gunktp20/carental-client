@@ -1,5 +1,5 @@
 import Wrapper from "../../assets/wrappers/pages/Landing";
-import { Navbar } from "../../components";
+import { Footer, Navbar } from "../../components";
 import Wallpaper from "../../assets/images/4-Reasons-why-a-Car-Rental-is-better-for-a-Family-Road-Trip-1.jpeg";
 import { FaTags } from "react-icons/fa";
 import { HiLightBulb } from "react-icons/hi";
@@ -143,7 +143,7 @@ function Landing() {
           </div>
         </div>
       </div>
-
+    <Footer/>
       
       {/*  */}
     </Wrapper>
