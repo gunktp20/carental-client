@@ -1,85 +1,184 @@
 import Wrapper from "../../assets/wrappers/pages/Register";
-import { Navbar, Footer } from "../../components";
+import { Navbar, Footer, FormRow } from "../../components";
 import wallpaper from "../../assets/images/wallpaper-register.jpg";
+import { validate } from "email-validator";
 import { FcGoogle } from "react-icons/fc";
+import { useState } from "react";
+import OtpInput from "react-otp-input";
+import { MdOutlineEmail } from "react-icons/md";
+import { useAppSelector, useAppDispatch } from "../../app/hook";
+import { setStep, setEmail, setOtp } from "../../features/auth/auth.slice";
 
 function Register() {
+  const { step } = useAppSelector((state) => state.auth);
   return (
     <Wrapper>
       <Navbar />
-      <div className="flex flex-col justify-center items-center">
-        {/* Login Form Start*/}
-        <div className="bg-white w-[540px] rounded-xl p-8 absolute z-[2] top-[9rem]">
-          <div className="flex flex-col">
-            <div className="font-[400] text-[27px] text-gray-800">
-              ลงทะเบียนเป็นสมาชิก
-            </div>
-            <div className="font-[300] text-[13.5px] text-gray-500">
-              กรอกข้อมูลสำหรับการลงทะเบียน กรุณาใช้ข้อมูลจริง
-            </div>
-          </div>
-          {/* <label
-          htmlFor="input-group-1"
-          className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-        >
-          Your Email
-        </label> */}
-          <div className="relative mb-7 mt-6">
-            <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
-              <svg
-                className="w-4 h-4 text-gray-500 dark:text-gray-400"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor"
-                viewBox="0 0 20 16"
-              >
-                <path d="m10.036 8.278 9.258-7.79A1.979 1.979 0 0 0 18 0H2A1.987 1.987 0 0 0 .641.541l9.395 7.737Z" />
-                <path d="M11.241 9.817c-.36.275-.801.425-1.255.427-.428 0-.845-.138-1.187-.395L0 2.6V14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V2.5l-8.759 7.317Z" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              id="input-group-1"
-              className="bg-gray-50 border border-gray-300 text-gray-900 outline-1 text-[13px] focus:outline-primary-400 focus:outline-[1px] rounded-lg  block w-full ps-10 p-2.5 "
-              placeholder="carental.co@gmail.com"
-            ></input>
-            <div className="absolute text-red-500 text-[11.4px] bottom-[-1.3rem]">
-              * กรุณากรอก อีเมลล์ ของคุณ
-            </div>
-          </div>
-          <button className="bg-primary-500 text-sm text-white w-[100%] h-[42px] rounded-lg mb-8">
-            ลงทะเบียน
-          </button>
-          <div className="flex relative justify-center items-center mb-7">
-            <div className="absolute bg-white z-[2] px-2 rounded-[100%] text-gray-600 text-sm">
-              หรือ
-            </div>
-            <div className="bg-gray-300 absolute w-[100%] h-[1px]"></div>
-          </div>
-          <button className="border-[1px] h-[42px] mb-5 w-[100%] border-gray-300 rounded-lg flex items-center justify-center">
-            <FcGoogle className="text-[23px]" />
-            <div className="text-[12.8px] ml-2 ">เข้าสู่ระบบด้วย Google</div>
-          </button>
-          <div className="text-[12px]">
-            การลงทะเบียนเป็นสมาชิก Carental ถือว่าท่านยอมรับใน{" "}
-            <a className="text-primary-500 underline mr-2">เงื่อนไข ข้อกำหนด</a>
-            เเละ{" "}
-            <a className="text-primary-500 underline">นโยบายความเป็นส่วนตัว</a>
-          </div>
-        </div>
-
-        {/* Login Form End */}
-        <div className="relative h-[824px] w-[100%]">
-          <div className="absolute bg-[#0000007a] top-0 w-[100%] h-[100%]"></div>
-          <img
-            src={wallpaper}
-            className="h-[100%] w-[100%] object-cover object-right-top"
-          ></img>
-        </div>
-      </div>
+      {step === 1 && <SendEmailVerification />}
+      {step === 2 && <OTPVerificationForm />}
       <Footer />
     </Wrapper>
   );
 }
+
+const SendEmailVerification = () => {
+  const dispatch = useAppDispatch();
+  const { email } = useAppSelector((state) => state.auth);
+  const [isFormattEmailValid, setIsFormattEmailValid] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(setEmail(e.target.value));
+    if (e.target.value === "") {
+      setErrorMessage("* กรุณากรอกอีเมลของคุณ");
+      setIsFormattEmailValid(false);
+      return;
+    }
+    if (validate(e.target.value)) {
+      setErrorMessage("* อีเมลล์ไม่ถูกต้อง");
+      setIsFormattEmailValid(true);
+    } else {
+      setErrorMessage("* อีเมลล์ไม่ถูกต้อง");
+      setIsFormattEmailValid(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col justify-center items-center">
+      <div className="bg-white w-[540px] rounded-xl p-8 absolute z-[2] top-[9rem]">
+        <div className="flex flex-col">
+          <div className="font-[400] text-[27px] text-gray-800">
+            ลงทะเบียนเป็นสมาชิก
+          </div>
+          <div className="font-[300] text-[13.5px] text-gray-500">
+            กรอกข้อมูลสำหรับการลงทะเบียน กรุณาใช้ข้อมูลจริง
+          </div>
+        </div>
+        <FormRow
+          type="text"
+          name="email"
+          labelText="E-mail"
+          value={email}
+          handleChange={handleChangeEmail}
+          error={!isFormattEmailValid}
+          errMsg={errorMessage}
+          icon={<MdOutlineEmail />}
+          tailwindClass="mt-[1.5rem]"
+        />
+
+        <button
+          className="bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-8 disabled:bg-primary-100"
+          onClick={() => {
+            dispatch(setStep(2));
+            dispatch(setEmail(email));
+          }}
+          disabled={!isFormattEmailValid || email === ""}
+        >
+          ถัดไป
+        </button>
+        <div className="flex relative justify-center items-center mb-7">
+          <div className="absolute bg-white z-[2] px-2 rounded-[100%] text-gray-600 text-[12.2px]">
+            หรือ
+          </div>
+          <div className="bg-gray-300 absolute w-[75%] h-[1px]"></div>
+        </div>
+        <button className="border-[1px] h-[42px] mb-5 w-[100%] border-gray-300 rounded-lg flex items-center justify-center">
+          <FcGoogle className="text-[23px]" />
+          <div className="text-[12.8px] ml-2 ">เข้าสู่ระบบด้วย Google</div>
+        </button>
+
+        <div className="text-[12px]">
+          การลงทะเบียนเป็นสมาชิก Carental ถือว่าท่านยอมรับใน{" "}
+          <a className="text-primary-500 underline mr-2">เงื่อนไข ข้อกำหนด</a>
+          เเละ{" "}
+          <a className="text-primary-500 underline">นโยบายความเป็นส่วนตัว</a>
+        </div>
+      </div>
+
+      <div className="relative h-[824px] w-[100%]">
+        <div className="absolute bg-[#0000007a] top-0 w-[100%] h-[100%]"></div>
+        <img
+          src={wallpaper}
+          className="h-[100%] w-[100%] object-cover object-right-top"
+        ></img>
+      </div>
+    </div>
+  );
+};
+
+const OTPVerificationForm = () => {
+  const dispatch = useAppDispatch();
+  const { email, otp } = useAppSelector((state) => state.auth);
+
+  const handleOTPChange = (otp: string) => dispatch(setOtp(otp));
+
+  return (
+    <div className="flex flex-col justify-center items-center">
+      <div className="bg-white w-[540px] rounded-xl p-8 absolute z-[2] top-[9rem]">
+        <div className="flex flex-col">
+          <div className="font-[400] text-[27px] text-gray-800">
+            กรอกรหัสยืนยันตัวตน
+          </div>
+          <div className="font-[300] text-[13.5px] text-gray-500">
+            ระบุรหัสผ่านทาง อีเมล ที่ส่งไปยัง
+          </div>
+          <div className="text-primary-500 text-[14px] mt-2">{email}</div>
+        </div>
+
+        <div className="w-[100%] flex justify-center items-center mt-12 mb-6">
+          <OtpInput
+            value={otp}
+            onChange={handleOTPChange}
+            numInputs={6}
+            inputType="tel"
+            containerStyle={{
+              width: "90%",
+              display: "flex",
+              gridGap: "8px",
+              justifyContent: "center",
+            }}
+            renderSeparator={<span></span>}
+            renderInput={(props) => <input {...props} />}
+            inputStyle={{
+              width: "40px",
+              marginBottom: "10px",
+              height: "30px",
+              borderTop: "none",
+              borderLeft: "none",
+              borderRight: "none",
+              backgroundColor: "transparent",
+              outline: "none",
+              borderBottom: "2px solid #4195fc",
+            }}
+          />
+        </div>
+        <button
+          className="bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-8 disabled:bg-primary-100"
+          onClick={() => {
+            dispatch(setStep(2));
+            dispatch(setEmail(email));
+          }}
+          disabled={!otp ? true : false}
+        >
+          ยืนยัน
+        </button>
+        <div className="flex text-sm justify-center">
+          ไม่ได้รับรหัสผ่าน?{" "}
+          <p onClick={()=>{
+
+          }} className="text-primary-500 ml-2 cursor-pointer">ส่งรหัสผ่านใหม่ อีกครั้ง</p>
+        </div>
+      </div>
+
+      <div className="relative h-[824px] w-[100%]">
+        <div className="absolute bg-[#0000007a] top-0 w-[100%] h-[100%]"></div>
+        <img
+          src={wallpaper}
+          className="h-[100%] w-[100%] object-cover object-right-top"
+        ></img>
+      </div>
+    </div>
+  );
+};
 
 export default Register;
