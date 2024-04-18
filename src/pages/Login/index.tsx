@@ -6,21 +6,70 @@ import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
 import { MdOutlineEmail } from "react-icons/md";
 import { FiLock } from "react-icons/fi";
-import { Alert } from "@mui/material";
+import api from "../../services/api";
+import { AxiosError } from "axios";
+import { useNavigate } from "react-router-dom";
+import { setCredential } from "../../features/auth/auth.slice";
+import { useAppDispatch } from "../../app/hook";
+import {
+  GoogleLoginResponse,
+  GoogleLoginResponseOffline,
+  useGoogleLogin,
+} from "react-google-login";
 
 function Login() {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [isFormattEmailValid, setIsFormattEmailValid] = useState<boolean>(true);
   const [isPasswordExist, setIsPasswordExist] = useState<boolean>(true);
-  //handler alert
-  const [showAlert, setShowAlert] = useState<boolean>(false);
-  const [alertText, setAlertText] = useState<string>("");
-  const [alertType, setAlertType] = useState<string>("");
-  //msg of error for expand
   const [emailErrorMessage, setEmailErrorMessage] = useState<string>("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState<string>("");
   const [timeoutIds, setTimeoutIds] = useState<number[]>([]);
+  const [emailError, setEmailError] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [thatPassInCorrect, SetThatPassInCorrect] = useState<string>("");
+
+  const onSuccess = async (
+    res: GoogleLoginResponse | GoogleLoginResponseOffline
+  ) => {
+    const tokens = "profileObj" in res ? res.tokenObj : undefined;
+    console.log("onSuccess");
+    try {
+      const { data } = await api.post(`/auth/google-auth/`, {
+        tokens,
+      });
+      setIsLoading(false);
+      dispatch(setCredential({ user: data?.user, token: data?.accessToken }));
+      return navigate("/");
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        const msg =
+          typeof err?.response?.data?.msg === "object"
+            ? err?.response?.data?.msg[0]
+            : err?.response?.data?.msg;
+        console.log(msg);
+        setIsLoading(false);
+        setEmailError(true);
+        setEmailErrorMessage(msg);
+        return;
+      }
+    }
+  };
+  const onFailure = (res: GoogleLoginResponse | GoogleLoginResponseOffline) => {
+    console.log("LOGIN FAILED! res:", res);
+  };
+
+  const clientId =
+    "58393219866-rgf9c2p16vop971javfn875ehtigi20k.apps.googleusercontent.com";
+
+  const { signIn } = useGoogleLogin({
+    onSuccess,
+    onFailure,
+    clientId,
+    cookiePolicy: "single_host_origin",
+    isSignedIn: false,
+  });
 
   const clearAllTimeouts = () => {
     timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -30,7 +79,7 @@ function Login() {
   const clearAlert = () => {
     clearAllTimeouts();
     const newTimeoutId = setTimeout(() => {
-      setShowAlert(false);
+      setEmailError(false);
     }, 3000);
     setTimeoutIds([newTimeoutId]);
   };
@@ -39,15 +88,15 @@ function Login() {
     setEmail(e.target.value);
     if (e.target.value === "") {
       setEmailErrorMessage("* กรุณากรอกอีเมลของคุณ");
-      setIsFormattEmailValid(false);
+      setEmailError(true);
       return;
     }
     if (validate(e.target.value)) {
       setEmailErrorMessage("* อีเมลล์ไม่ถูกต้อง");
-      setIsFormattEmailValid(true);
+      setEmailError(false);
     } else {
       setEmailErrorMessage("* อีเมลล์ไม่ถูกต้อง");
-      setIsFormattEmailValid(false);
+      setEmailError(true);
     }
   };
 
@@ -58,7 +107,37 @@ function Login() {
       setIsPasswordExist(false);
       return;
     }
+    if (thatPassInCorrect !== "" && e.target.value !== thatPassInCorrect) {
+      return setEmailError(false);
+    }
     setIsPasswordExist(true);
+  };
+
+  const login = async () => {
+    try {
+      const { data } = await api.post(`/auth/login/`, {
+        email,
+        password,
+      });
+      dispatch(setCredential({ user: data?.user, token: data?.accessToken }));
+      setIsLoading(false);
+      dispatch(setCredential({ user: data?.user, token: data?.accessToken }));
+      return navigate("/");
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        setIsLoading(false);
+        if (err?.response?.request.status === 401) {
+          SetThatPassInCorrect(password);
+        }
+        const msg =
+          typeof err?.response?.data?.msg === "object"
+            ? err?.response?.data?.msg[0]
+            : err?.response?.data?.msg;
+        setEmailError(true);
+        setEmailErrorMessage(msg);
+        return clearAlert();
+      }
+    }
   };
 
   return (
@@ -74,25 +153,13 @@ function Login() {
               กรอกข้อมูลของคุณเพื่อเข้าสู่ระบบ
             </div>
           </div>
-          <div className="">
-            <Alert
-              severity={"error"}
-              sx={{
-                fontSize: "11.8px",
-                alignItems: "center",
-                marginTop: "2rem",
-              }}
-            >
-              รหัสผ่านของคุณไม่ถูกต้อง
-            </Alert>
-          </div>
           <FormRow
             type="text"
             name="email"
             labelText="อีเมลล์"
             value={email}
             handleChange={handleChangeEmail}
-            error={!isFormattEmailValid}
+            error={emailError}
             errMsg={emailErrorMessage}
             icon={<MdOutlineEmail />}
             tailwindClass="mt-[1.5rem]"
@@ -111,8 +178,15 @@ function Login() {
 
           <button
             disabled={
-              !password || !email || !isFormattEmailValid || !isPasswordExist
+              !password ||
+              !email ||
+              !isPasswordExist ||
+              isLoading ||
+              emailError ||
+              password === thatPassInCorrect ||
+              !validate(email)
             }
+            onClick={login}
             className="bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-8 disabled:bg-primary-100 mt-4"
           >
             เข้าสู่ระบบ
@@ -123,7 +197,10 @@ function Login() {
             </div>
             <div className="bg-gray-300 absolute w-[75%] h-[1px]"></div>
           </div>
-          <button className="border-[1px] h-[42px] mb-5 w-[100%] border-gray-300 rounded-lg flex items-center justify-center">
+          <button
+            onClick={signIn}
+            className="border-[1px] h-[42px] mb-5 w-[100%] border-gray-300 rounded-lg flex items-center justify-center"
+          >
             <FcGoogle className="text-[23px]" />
             <div className="text-[12.8px] ml-2 ">เข้าสู่ระบบด้วย Google</div>
           </button>

@@ -4,17 +4,18 @@ import { useNavigate } from "react-router-dom";
 
 const RegistrationFlyoutLink = () => {
   return (
-    <button className="">
-      <FlyoutLink>เข้าสู่ระบบ / สมัครสมาชิก</FlyoutLink>
+    <button>
+      <FlyoutLink FlyoutContent={Content}>เข้าสู่ระบบ / สมัครสมาชิก</FlyoutLink>
     </button>
   );
 };
 
 interface IPropFlyoutLink {
   children: string | JSX.Element;
+  FlyoutContent: React.ElementType;
 }
 
-const FlyoutLink = ({ children }: IPropFlyoutLink) => {
+const FlyoutLink = ({ children, FlyoutContent }: IPropFlyoutLink) => {
   const [open, setOpen] = useState(false);
 
   const showFlyout = open;
@@ -38,7 +39,7 @@ const FlyoutLink = ({ children }: IPropFlyoutLink) => {
           >
             <div className="absolute -top-6 left-0 right-0 h-6 bg-transparent" />
             <div className="absolute left-1/2 top-0 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-white" />
-            <Content />
+            <FlyoutContent />
           </motion.div>
         )}
       </AnimatePresence>
@@ -55,23 +56,27 @@ const Content = () => {
           รับส่วนลดพิเศษสำหรับสมาชิก Carental
           พร้อมการจองที่รวดเร็วและไม่ยุ่งยาก!
         </p>
-        <button
-          onClick={() => navigate("/login")}
+        <div
+          onClick={() => {
+            navigate("/login");
+          }}
           className="bg-primary-500 rounded-lg text-white w-[100%] py-2"
         >
           เข้าสู่ระบบ
-        </button>
+        </div>
       </div>
       <div>
         <p className="text-[13px] mb-3 text-left">
           เข้าเว็บไซต์ Carental เป็นครั้งแรกใช่ไหม?
         </p>
-        <button
-          onClick={() => navigate("/register")}
+        <div
+          onClick={() => {
+            navigate("/register");
+          }}
           className="border-primary-700 border-[1px] rounded-lg text-primary-700 w-[100%] py-2"
         >
           สมัครสมาชิก
-        </button>
+        </div>
       </div>
     </div>
   );

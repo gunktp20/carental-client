@@ -11,9 +11,14 @@ import { FaChevronLeft } from "react-icons/fa";
 import { CiLock } from "react-icons/ci";
 import api from "../../services/api";
 import { AxiosError } from "axios";
-import { Alert } from "@mui/material";
 import { useAppDispatch } from "../../app/hook";
 import { setCredential } from "../../features/auth/auth.slice";
+import { useNavigate } from "react-router-dom";
+import {
+  GoogleLoginResponse,
+  GoogleLoginResponseOffline,
+  useGoogleLogin,
+} from "react-google-login";
 
 function Register() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -57,9 +62,50 @@ const SendEmailVerification = ({
   setEmail,
   email,
 }: IPropSendEmailVerification) => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [isSentEmailError, setIsSentEmailError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const onSuccess = async (
+    res: GoogleLoginResponse | GoogleLoginResponseOffline
+  ) => {
+    const tokens = "profileObj" in res ? res.tokenObj : undefined;
+    try {
+      const { data } = await api.post(`/auth/google-auth/`, {
+        tokens,
+      });
+      setIsLoading(false);
+      dispatch(setCredential({ user: data?.user, token: data?.accessToken }));
+      return navigate("/");
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        const msg =
+          typeof err?.response?.data?.msg === "object"
+            ? err?.response?.data?.msg[0]
+            : err?.response?.data?.msg;
+        setIsLoading(false);
+        setIsSentEmailError(true);
+        setErrorMessage(msg);
+        return;
+      }
+    }
+  };
+  const onFailure = (res: GoogleLoginResponse | GoogleLoginResponseOffline) => {
+    console.log("LOGIN FAILED! res:", res);
+  };
+
+  const clientId =
+    "58393219866-rgf9c2p16vop971javfn875ehtigi20k.apps.googleusercontent.com";
+
+  const { signIn } = useGoogleLogin({
+    onSuccess,
+    onFailure,
+    clientId,
+    cookiePolicy: "single_host_origin",
+    isSignedIn: false,
+  });
 
   const sendEmailOtp = async () => {
     setIsLoading(true);
@@ -123,13 +169,17 @@ const SendEmailVerification = ({
         />
 
         <button
-          className="bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-8 disabled:bg-primary-100 mt-2 flex justify-center items-center"
+          className="bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-8 disabled:bg-primary-100 mt-4 flex justify-center items-center"
           onClick={() => {
             sendEmailOtp();
           }}
           disabled={isSentEmailError || email === "" || isLoading}
         >
-          {isLoading ? <div className="loader w-[25px] h-[25px]"></div> : "ถัดไป"}
+          {isLoading ? (
+            <div className="loader w-[25px] h-[25px]"></div>
+          ) : (
+            "ถัดไป"
+          )}
         </button>
         <div className="flex relative justify-center items-center mb-7">
           <div className="absolute bg-white z-[2] px-2 rounded-[100%] text-gray-600 text-[12.2px]">
@@ -137,7 +187,10 @@ const SendEmailVerification = ({
           </div>
           <div className="bg-gray-300 absolute w-[75%] h-[1px]"></div>
         </div>
-        <button className="border-[1px] h-[42px] mb-5 w-[100%] border-gray-300 rounded-lg flex items-center justify-center">
+        <button
+          onClick={signIn}
+          className="border-[1px] h-[42px] mb-5 w-[100%] border-gray-300 rounded-lg flex items-center justify-center"
+        >
           <FcGoogle className="text-[23px]" />
           <div className="text-[12.8px] ml-2 ">เข้าสู่ระบบด้วย Google</div>
         </button>
@@ -278,20 +331,24 @@ const OTPVerificationForm = ({
           />
         </div>
         <div
-          className={`text-red-500 text-[11.5px] transition-all text-center duration-300 mt-[1rem] ${
+          className={`text-red-500 text-[11.5px] transition-all text-center duration-300 ${
             error ? "mt-[1rem] " : "mt-[-25px]"
           } z-2`}
         >
-          {alertText || ""}
+          {alertText}
         </div>
         <button
           className={`bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-8 mt-10 disabled:bg-primary-100 z-[1]`}
           onClick={() => {
             verifyOTP();
           }}
-          disabled={otp.length < 6 ? true : false || isLoading}
+          disabled={otp.length < 6 ? true : false || isLoading || error}
         >
-          ยืนยัน
+          {isLoading ? (
+            <div className="loader w-[25px] h-[25px]"></div>
+          ) : (
+            "ยืนยัน"
+          )}
         </button>
 
         <div className="flex text-sm justify-center">
@@ -322,12 +379,14 @@ interface IPropSetPasswordForm {
 }
 
 const SetPasswordForm = ({ setStep, token }: IPropSetPasswordForm) => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [values, setValues] = useState<{
     password: string;
     confirm_password: string;
   }>({ password: "", confirm_password: "" });
   const [errorMessage, setErrorMsg] = useState<string>("");
+  const [passwordError, setPasswordError] = useState<boolean>(false);
   const [isConfirmValid, setIsConfirmPasswordValid] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // validated states
@@ -336,8 +395,21 @@ const SetPasswordForm = ({ setStep, token }: IPropSetPasswordForm) => {
   const [numberValidated, setNumberValidated] = useState(false);
   const [specialValidated, setSpecialValidated] = useState(false);
   const [lengthValidated, setLengthValidated] = useState(false);
-  //
-  const [engOnly, setEngOnly] = useState<boolean>(true);
+  const [timeoutIds, setTimeoutIds] = useState<number[]>([]);
+
+  const clearAllTimeouts = () => {
+    timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
+    setTimeoutIds([]);
+  };
+
+  const clearAlert = () => {
+    clearAllTimeouts();
+    const newTimeoutId = setTimeout(() => {
+      setPasswordError(false);
+      setErrorMsg("");
+    }, 3000);
+    setTimeoutIds([newTimeoutId]);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues({ ...values, [e.target.name]: e.target.value });
@@ -382,28 +454,35 @@ const SetPasswordForm = ({ setStep, token }: IPropSetPasswordForm) => {
     // eslint-disable-next-line no-useless-escape
     const regex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
     if (!regex.test(e.target.value)) {
-      setEngOnly(false);
+      setPasswordError(true);
       setErrorMsg("กรอกภาษาอังกฤษเเละตัวเลขเท่านั้น");
     } else {
-      setEngOnly(true);
+      setPasswordError(false);
     }
   };
-
   const setPassword = async () => {
     const { password } = values;
     setIsLoading(true);
+
     try {
       const { data } = await api.put(`/user/password/`, {
         token,
         password,
       });
+      setIsLoading(false);
       dispatch(setCredential({ user: data?.user, token: data?.accessToken }));
-      setIsLoading(false);
-      return;
+      return navigate("/");
     } catch (err) {
-      console.log(err);
-      setIsLoading(false);
-      return;
+      if (err instanceof AxiosError) {
+        const msg =
+          typeof err?.response?.data?.msg === "object"
+            ? err?.response?.data?.msg[0]
+            : err?.response?.data?.msg;
+        setErrorMsg(msg);
+        setPasswordError(true);
+        setIsLoading(false);
+        return clearAlert();
+      }
     }
   };
 
@@ -479,7 +558,7 @@ const SetPasswordForm = ({ setStep, token }: IPropSetPasswordForm) => {
             labelText="รหัสผ่าน"
             value={values.password}
             handleChange={handlePasswordChange}
-            error={!engOnly}
+            error={passwordError}
             errMsg={errorMessage}
             icon={<CiLock />}
             tailwindClass="mt-[1.5rem] bg-green-500"
@@ -535,7 +614,7 @@ const SetPasswordForm = ({ setStep, token }: IPropSetPasswordForm) => {
             />{" "}
             ประกอบด้วยตัวอักษรอย่างน้อง 8 ตัว
           </div>
-          <div className="flex text-[11.3px] text-gray-500 pl-3 items-center gap-4">
+          <div className="flex text-[11.3px] text-gray-500 pl-3 items-center gap-4 mb-3">
             <IoIosCheckmarkCircle
               className={`text-[16px] ${
                 isConfirmValid ? "text-primary-500" : "text-gray-400"
@@ -554,18 +633,21 @@ const SetPasswordForm = ({ setStep, token }: IPropSetPasswordForm) => {
             !lengthValidated ||
             values.password !== values.confirm_password ||
             !values.password.match(
+              // eslint-disable-next-line no-useless-escape
               /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/
-            )
+            ) ||
+            passwordError
           }
           onClick={setPassword}
-          className="bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-8 disabled:bg-primary-100"
+          className="bg-primary-500 text-[14.5px] font-[300] text-white w-[100%] h-[42px] transition-all rounded-lg mb-5 disabled:bg-primary-100"
         >
-          ยืนยัน
+          {isLoading ? (
+            <div className="loader w-[25px] h-[25px]"></div>
+          ) : (
+            "ยืนยัน"
+          )}
         </button>
-        {/* Error message */}
-        <div className="text-center text-red-500 text-[12.3px]">
-          เกิดข้อผิดพลาดบางอย่าง กรุณาลองอีกครั้ง
-        </div>
+
         <div className="flex text-sm justify-center">
           ไม่ได้รับรหัสผ่าน?{" "}
           <p
