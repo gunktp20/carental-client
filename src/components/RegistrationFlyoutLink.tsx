@@ -56,7 +56,7 @@ const Content = () => {
           พร้อมการจองที่รวดเร็วและไม่ยุ่งยาก!
         </p>
         <button
-          onClick={() => navigate("/register")}
+          onClick={() => navigate("/login")}
           className="bg-primary-500 rounded-lg text-white w-[100%] py-2"
         >
           เข้าสู่ระบบ

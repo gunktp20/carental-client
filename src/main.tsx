@@ -7,6 +7,8 @@ import "./index.css";
 import "./App.css";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
+import Login from "./pages/Login";
+import HandlerNotFound from "./pages/HandlerNotFound";
 
 const router = createBrowserRouter([
   {
@@ -16,6 +18,14 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: <Register />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "*",
+    element: <HandlerNotFound />,
   },
 ]);
 
